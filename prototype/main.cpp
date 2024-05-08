@@ -1,84 +1,91 @@
 #include <iostream>
-#include <string>
-#include <unordered_map>
+#include <vector>
 
-using namespace std;
+class Shape {
+protected:
+    int X;
+    int Y;
+    std::string color;
 
-class Veiculo{
-    public:
-        virtual ~Veiculo(){}
-        virtual Veiculo* clone() const = 0;
-        virtual void printInfo() const = 0;
+public:
+    Shape(int x = 0, int y = 0, const std::string& color = "white")
+        : X(x), Y(y), color(color) {}
+
+    Shape(const Shape& source)
+        : X(source.X), Y(source.Y), color(source.color) {}
+
+    virtual Shape* clone() const = 0;
+
+    virtual ~Shape() {}
 };
 
-class Carro : public Veiculo {
-    private:
-        string marca_;
-        string modelo_;
-    public:
-        Carro(string marca, string modelo) : marca_(marca), modelo_(modelo) {}
-        Veiculo* clone() const override {
-            return new Carro(*this);
-        }
-        void printInfo() const override {
-            cout << "Carro - Marca: " << marca_ << ", Modelo: " << modelo_ << endl;
-        }
-};
+class Rectangle : public Shape {
+private:
+    int width;
+    int height;
 
-class Moto : public Veiculo {
-    private:
-        string marca_;
-        string modelo_;
-    public:
-        Moto(string marca, string modelo) : marca_(marca), modelo_(modelo) {}
-        Veiculo* clone() const override {
-            return new Moto(*this);
-        }
-        void printInfo() const override {
-            cout << "Moto - Marca: " << marca_ << ", Modelo: " << modelo_ << endl;
-        }
-};
+public:
+    Rectangle(int x = 0, int y = 0, const std::string& color = "white",
+              int width = 0, int height = 0)
+        : Shape(x, y, color), width(width), height(height) {}
 
-class FabricaVeiculo{
-    private:
-        unordered_map<string, Veiculo*> prototipos_;
-    public:
-        ~FabricaVeiculo(){
-            for(auto it : prototipos_){
-                delete it.second;
-            }
-            prototipos_.clear();
-        }
+    Rectangle(const Rectangle& source)
+        : Shape(source), width(source.width), height(source.height) {}
 
-        void registrarPrototipos(const string& key, Veiculo* prototipo){
-            prototipos_[key] = prototipo;
-        }
-        Veiculo* criar(const string& key){
-            if(prototipos_.find(key) != prototipos_.end()){
-                return prototipos_[key]->clone();
-            }
-            return nullptr;
-        }
-};
-
-int main(){
-    FabricaVeiculo fabrica;
-
-    fabrica.registrarPrototipos("Carro", new Carro("Toyota", "Corolla"));
-    fabrica.registrarPrototipos("Moto", new Moto("Honda", "CBR"));
-
-    Veiculo* carro = fabrica.criar("Carro");
-    Veiculo* moto = fabrica.criar("Moto");
-
-    if(carro){
-        carro->printInfo();
-        delete carro;
+    Shape* clone() const override {
+        return new Rectangle(*this);
     }
-    if(moto){
-        moto->printInfo();
-        delete moto;
+};
+
+class Circle : public Shape {
+private:
+    int radius;
+
+public:
+    Circle(int x = 0, int y = 0, const std::string& color = "white", int radius = 0)
+        : Shape(x, y, color), radius(radius) {}
+
+    Circle(const Circle& source)
+        : Shape(source), radius(source.radius) {}
+
+    Shape* clone() const override {
+        return new Circle(*this);
+    }
+};
+
+class Application {
+private:
+    std::vector<Shape*> shapes;
+
+public:
+    Application() {
+        Circle* circle = new Circle(10, 10, "blue", 20);
+        shapes.push_back(circle);
+
+        Circle* anotherCircle = dynamic_cast<Circle*>(circle->clone());
+        shapes.push_back(anotherCircle);
+
+        Rectangle* rectangle = new Rectangle(0, 0, "red", 10, 20);
+        shapes.push_back(rectangle);
     }
 
+    ~Application() {
+        for (auto shape : shapes) {
+            delete shape;
+        }
+    }
+
+    void businessLogic() {
+        std::vector<Shape*> shapesCopy;
+
+        for (auto shape : shapes) {
+            shapesCopy.push_back(shape->clone());
+        }
+    }
+};
+
+int main() {
+    Application app;
+    app.businessLogic();
     return 0;
-    
 }
