@@ -1,75 +1,87 @@
 #include <iostream>
 #include <string>
 
-using namespace std;
-
-class Bebida{
-    public:
-        virtual ~Bebida(){}
-        virtual string getDescricao() const = 0;
-        virtual float custo() const = 0;
+class DataSource {
+public:
+    virtual ~DataSource() {}
+    virtual void writeData(const std::string& data) = 0;
+    virtual std::string readData() = 0;
 };
 
-class Cafe : public Bebida {
-    public:
-        string getDescricao() const override {
-            return "Café";
-        }
-        
-        float custo() const override {
-            return 1.50;
-        }
+class FileDataSource : public DataSource {
+public:
+    FileDataSource(const std::string& filename) : filename_(filename) {}
+
+    void writeData(const std::string& data) override {
+        std::cout << "Escrevendo dados no arquivo " << filename_ << std::endl;
+    }
+
+    std::string readData() override {
+        return "Dados lidos do arquivo " + filename_;
+    }
+
+private:
+    std::string filename_;
 };
 
-class DecoradorCondimento : public Bebida {
-    protected:
-        Bebida* bebida_;
-    public:
-        DecoradorCondimento(Bebida* bebida) : bebida_(bebida){}
+class DataSourceDecorator : public DataSource {
+protected:
+    DataSource* wrappee_;
 
-        string getDescricao() const override {
-            return bebida_->getDescricao();
-        }
+public:
+    DataSourceDecorator(DataSource* source) : wrappee_(source) {}
 
-        float custo() const override {
-            return bebida_->custo();
-        }
+    void writeData(const std::string& data) override {
+        wrappee_->writeData(data);
+    }
+
+    std::string readData() override {
+        return wrappee_->readData();
+    }
 };
 
-class Leite : public DecoradorCondimento {
-    public:
-        Leite(Bebida* bebida) : DecoradorCondimento(bebida) {}
+class EncryptionDecorator : public DataSourceDecorator {
+public:
+    EncryptionDecorator(DataSource* source) : DataSourceDecorator(source) {}
 
-        string getDescricao() const override {
-            return bebida_->getDescricao() + ", leite";
-        }
+    void writeData(const std::string& data) override {
+        std::cout << "Encriptando os dados" << std::endl;
+        wrappee_->writeData("Dados encriptados: " + data);
+    }
 
-        float custo() const override {
-            return bebida_->custo() + 0.50;
-        }
+    std::string readData() override {
+        std::string encryptedData = wrappee_->readData();
+        std::cout << "Decifrando os dados" << std::endl;
+        return "Dados decifrados: " + encryptedData;
+    }
 };
 
-class Acucar : public DecoradorCondimento {
-    public:
-        Acucar(Bebida* bebida) : DecoradorCondimento(bebida) {}
+class CompressionDecorator : public DataSourceDecorator {
+public:
+    CompressionDecorator(DataSource* source) : DataSourceDecorator(source) {}
 
-        string getDescricao() const override {
-            return bebida_->getDescricao() + ", açúcar";
-        }
+    void writeData(const std::string& data) override {
+        std::cout << "Comprimindo os dados" << std::endl;
+        wrappee_->writeData("Dados comprimidos: " + data);
+    }
 
-        float custo() const override {
-            return bebida_->custo() + 0.25;
-        }
+    std::string readData() override {
+        std::string compressedData = wrappee_->readData();
+        std::cout << "Descomprimindo os dados" << std::endl;
+        return "Dados descomprimidos: " + compressedData;
+    }
 };
 
-int main(){
-    Bebida* bebida = new Cafe();
-    bebida = new Leite(bebida);
-    bebida = new Acucar(bebida);
+int main() {
+    DataSource* source = new FileDataSource("somefile.dat");
+    source->writeData("salaryRecords");
 
-    cout << "Descricao: " << bebida->getDescricao() << endl;
-    cout << "Preco: R$" << bebida->custo() << endl;
-    
-    delete bebida;
+    source = new CompressionDecorator(source);
+    source->writeData("salaryRecords");
+
+    source = new EncryptionDecorator(source);
+    source->writeData("salaryRecords");
+
+    delete source;
     return 0;
 }
