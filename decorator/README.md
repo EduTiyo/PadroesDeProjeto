@@ -1,0 +1,1 @@
+O padrão de projeto estrutual Decorator é usado para adicionar funcionalidades adicionais a um objeto de forma dinâmica, permitindo que voce adicione novos comportamentos a um objeto existente sem alterar sua estrutura básica.
